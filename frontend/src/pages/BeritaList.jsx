@@ -4,8 +4,15 @@ import '../Cms.css';
 
 const BeritaList = () => {
   const [berita, setBerita] = useState([]);
-  const createAuthHeader = () => ({ 'Authorization': 'Basic ' + btoa('admin:password123') });
-
+  const createAuthHeader = () => {
+    // 1. Ambil token TEPAT saat fungsi ini dipanggil
+    const token = localStorage.getItem('auth_token'); 
+    
+    return {
+        'Authorization': token,
+        'Content-Type': 'application/json'
+    };
+};
   useEffect(() => {
     fetch('http://localhost:8080/api/berita', { headers: createAuthHeader() })
       .then(res => res.json())

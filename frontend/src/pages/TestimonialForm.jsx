@@ -15,10 +15,15 @@ const TestimonialForm = () => {
     urlGambar: "",
   });
 
-  const createAuthHeader = () => ({
-    Authorization: "Basic " + btoa("admin:password123"),
-    "Content-Type": "application/json",
-  });
+  const createAuthHeader = () => {
+    // 1. Ambil token TEPAT saat fungsi ini dipanggil
+    const token = localStorage.getItem("auth_token");
+
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
+  };
 
   useEffect(() => {
     if (isEditMode) {

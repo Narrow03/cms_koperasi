@@ -1,30 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import '../Cms.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import "../Cms.css";
 
 const PinjamanList = () => {
   const [pinjaman, setPinjaman] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper untuk membuat header autentikasi
-  const createAuthHeader = () => ({
-    'Authorization': 'Basic ' + btoa('admin:password123'),
-  });
+  const createAuthHeader = () => {
+    // 1. Ambil token TEPAT saat fungsi ini dipanggil
+    const token = localStorage.getItem("auth_token");
+
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
+  };
 
   // Mengambil data saat komponen pertama kali dimuat
   useEffect(() => {
-    fetch('http://localhost:8080/api/pinjaman', { headers: createAuthHeader() })
-      .then(response => {
+    fetch("http://localhost:8080/api/pinjaman", { headers: createAuthHeader() })
+      .then((response) => {
         if (!response.ok) {
-          throw new Error('Gagal mengambil data, pastikan kredensial benar.');
+          throw new Error("Gagal mengambil data, pastikan kredensial benar.");
         }
         return response.json();
       })
-      .then(data => {
+      .then((data) => {
         setPinjaman(data);
         setLoading(false);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching data:", error);
         setLoading(false);
       });
@@ -32,17 +37,18 @@ const PinjamanList = () => {
 
   // Fungsi untuk menangani penghapusan
   const handleDelete = (id) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus produk pinjaman ini?')) {
+    if (
+      window.confirm("Apakah Anda yakin ingin menghapus produk pinjaman ini?")
+    ) {
       fetch(`http://localhost:8080/api/pinjaman/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: createAuthHeader(),
-      })
-      .then(response => {
+      }).then((response) => {
         if (response.ok) {
-          setPinjaman(pinjaman.filter(item => item.id !== id));
-          alert('Produk berhasil dihapus!');
+          setPinjaman(pinjaman.filter((item) => item.id !== id));
+          alert("Produk berhasil dihapus!");
         } else {
-          alert('Gagal menghapus produk.');
+          alert("Gagal menghapus produk.");
         }
       });
     }
@@ -54,7 +60,9 @@ const PinjamanList = () => {
     <div className="cms-page">
       <div className="page-header">
         <h2>Daftar Produk Pinjaman</h2>
-        <Link to="/pinjaman/baru" className="cms-button">Tambah Produk Baru</Link>
+        <Link to="/pinjaman/baru" className="cms-button">
+          Tambah Produk Baru
+        </Link>
       </div>
       <table className="cms-table">
         <thead>
@@ -66,14 +74,24 @@ const PinjamanList = () => {
           </tr>
         </thead>
         <tbody>
-          {pinjaman.map(item => (
+          {pinjaman.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.nama}</td>
               <td>{item.slug}</td>
               <td>
-                <Link to={`/pinjaman/edit/${item.id}`} className="cms-button edit">Edit</Link>
-                <button onClick={() => handleDelete(item.id)} className="cms-button delete">Hapus</button>
+                <Link
+                  to={`/pinjaman/edit/${item.id}`}
+                  className="cms-button edit"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="cms-button delete"
+                >
+                  Hapus
+                </button>
               </td>
             </tr>
           ))}
