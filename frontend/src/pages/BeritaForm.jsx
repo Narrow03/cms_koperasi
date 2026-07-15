@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast
 import "../Cms.css";
 
 const BeritaForm = () => {
@@ -32,14 +33,14 @@ const BeritaForm = () => {
     if (isEditMode) {
       setIsLoading(true); 
       fetch(`http://localhost:8080/api/berita/${id}`, {
-        headers: { Authorization: localStorage.getItem("auth_token") },
+        headers: createAuthHeader(),
       })
         .then((res) => {
-           if (!res.ok) throw new Error("Gagal mengambil data");
+           if (!res.ok) throw new Error("Gagal mengambil data dari server.");
            return res.json();
         })
         .then((data) => setFormData(data))
-        .catch((err) => alert("Terjadi kesalahan: " + err.message))
+        .catch((err) => toast.error("Terjadi kesalahan: " + err.message))
         .finally(() => setIsLoading(false)); 
     }
   }, [id, isEditMode]);
@@ -47,10 +48,10 @@ const BeritaForm = () => {
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 2. Mencegah Double Submit
+    // Mencegah Double Submit
     if (isSubmitting) return; 
     setIsSubmitting(true); // Kunci tombol
 
@@ -59,32 +60,31 @@ const BeritaForm = () => {
       : "http://localhost:8080/api/berita";
     const method = isEditMode ? "PUT" : "POST";
 
-    fetch(url, {
-      method,
-      headers: createAuthHeader(),
-      body: JSON.stringify(formData),
-    })
-      .then(async (res) => {
-        // Cek jika response tidak OK (misal 400 atau 500)
-        if (!res.ok) {
-           const errorData = await res.json().catch(() => ({})); 
-           throw new Error(errorData.message || "Gagal menyimpan berita.");
-        }
-        alert("Berita berhasil disimpan!");
-        navigate("/berita");
-      })
-      .catch((err) => {
-        alert(err.message);
-      })
-      .finally(() => {
-        // 3. Buka kunci tombol apapun hasilnya
-        setIsSubmitting(false); 
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: createAuthHeader(),
+        body: JSON.stringify(formData),
       });
+
+      if (response.ok) {
+        toast.success(`Berita berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
+        navigate("/berita");
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Gagal menyimpan berita.");
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      // Buka kunci tombol apapun hasilnya
+      setIsSubmitting(false); 
+    }
   };
 
   // Tampilkan loading saat edit mode belum siap
   if (isEditMode && isLoading) {
-      return <div className="cms-page"><h2>Memuat data...</h2></div>;
+      return <div className="cms-page"><h2 className="loading-text">Memuat data...</h2></div>;
   }
 
   return (
@@ -97,14 +97,16 @@ const BeritaForm = () => {
           name="judul"
           value={formData.judul}
           onChange={handleChange}
+          placeholder="Masukkan judul berita"
           required
         />
-        <label>Slug</label>
+        <label>Slug (URL Unik)</label>
         <input
           type="text"
           name="slug"
           value={formData.slug}
           onChange={handleChange}
+          placeholder="contoh: judul-berita-hari-ini"
           required
         />
         <label>URL Gambar</label>
@@ -113,6 +115,7 @@ const BeritaForm = () => {
           name="urlGambar"
           value={formData.urlGambar}
           onChange={handleChange}
+          placeholder="Masukkan URL atau path gambar"
           required
         />
         <label>Tanggal</label>
@@ -128,6 +131,7 @@ const BeritaForm = () => {
           name="deskripsiSingkat"
           value={formData.deskripsiSingkat}
           onChange={handleChange}
+          placeholder="Ringkasan singkat berita..."
           rows="3"
         />
         <label>Konten Lengkap</label>
@@ -135,18 +139,18 @@ const BeritaForm = () => {
           name="konten"
           value={formData.konten}
           onChange={handleChange}
+          placeholder="Isi berita lengkap di sini..."
           rows="10"
           required
         />
         
-        {/* 4. Update Tombol Submit */}
         <button 
             type="submit" 
             className="cms-button" 
-            disabled={isSubmitting} // Matikan tombol saat loading
+            disabled={isSubmitting}
             style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
         >
-          {isSubmitting ? "Menyimpan..." : (isEditMode ? "Update" : "Simpan")}
+          {isSubmitting ? "Menyimpan..." : (isEditMode ? "Perbarui Data" : "Simpan Data")}
         </button>
       </form>
     </div>

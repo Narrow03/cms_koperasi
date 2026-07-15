@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast
 import "../Cms.css";
 
 const GaleriForm = () => {
@@ -13,9 +14,7 @@ const GaleriForm = () => {
   });
 
   const createAuthHeader = () => {
-   
     const token = localStorage.getItem("auth_token");
-
     return {
       Authorization: token,
       "Content-Type": "application/json",
@@ -25,10 +24,15 @@ const GaleriForm = () => {
   useEffect(() => {
     if (isEditMode) {
       fetch(`http://localhost:8080/api/galeri/${id}`, {
-        headers: { Authorization: "Basic " + btoa("admin:password123") },
+        // Menggunakan createAuthHeader agar sesuai dan tidak di-hardcode
+        headers: createAuthHeader(),
       })
-        .then((res) => res.json())
-        .then((data) => setFormData(data));
+        .then((res) => {
+          if (!res.ok) throw new Error("Gagal mengambil data dari server.");
+          return res.json();
+        })
+        .then((data) => setFormData(data))
+        .catch((err) => toast.error(err.message));
     }
   }, [id, isEditMode]);
 
@@ -46,31 +50,45 @@ const GaleriForm = () => {
       ...formData,
       daftarGambar: [...formData.daftarGambar, { urlGambar: "" }],
     });
+
   const removeImage = (index) =>
     setFormData({
       ...formData,
       daftarGambar: formData.daftarGambar.filter((_, i) => i !== index),
     });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // --- VALIDASI FRONTEND ---
+    if (formData.daftarGambar.length === 0 || formData.daftarGambar.some(item => item.urlGambar.trim() === "")) {
+      toast.error("Mohon isi minimal satu URL gambar dengan benar.");
+      return;
+    }
+
     const url = isEditMode
       ? `http://localhost:8080/api/galeri/${id}`
       : "http://localhost:8080/api/galeri";
     const method = isEditMode ? "PUT" : "POST";
 
-    fetch(url, {
-      method,
-      headers: createAuthHeader(),
-      body: JSON.stringify(formData),
-    }).then((res) => {
-      if (res.ok) {
-        alert("Galeri berhasil disimpan!");
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: createAuthHeader(),
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success(`Galeri berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
         navigate("/galeri");
       } else {
-        alert("Gagal menyimpan galeri.");
+        const errorText = await response.text();
+        toast.error(errorText || "Gagal menyimpan galeri.");
       }
-    });
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error("Gagal terhubung ke server. Pastikan Backend aktif.");
+    }
   };
 
   return (
@@ -83,6 +101,7 @@ const GaleriForm = () => {
           name="judul"
           value={formData.judul}
           onChange={handleChange}
+          placeholder="Contoh: Kegiatan Sosial 2024"
           required
         />
         <label>Deskripsi</label>
@@ -90,6 +109,7 @@ const GaleriForm = () => {
           name="deskripsi"
           value={formData.deskripsi}
           onChange={handleChange}
+          placeholder="Jelaskan tentang galeri ini..."
           rows="3"
         />
 
@@ -101,20 +121,25 @@ const GaleriForm = () => {
                 name="urlGambar"
                 value={item.urlGambar}
                 onChange={(e) => handleImageChange(e, index)}
-                placeholder={`Nama file gambar #${index + 1}`}
+                placeholder={`URL / Nama file gambar #${index + 1}`}
+                required
               />
-              <button type="button" onClick={() => removeImage(index)}>
+              <button 
+                type="button" 
+                className="btn-remove" 
+                onClick={() => removeImage(index)}
+              >
                 Hapus
               </button>
             </div>
           ))}
-          <button type="button" onClick={addImage}>
-            Tambah Gambar
+          <button type="button" className="cms-button" onClick={addImage}>
+            + Tambah Gambar
           </button>
         </fieldset>
 
         <button type="submit" className="cms-button">
-          {isEditMode ? "Update" : "Simpan"}
+          {isEditMode ? "Perbarui Data" : "Simpan Data"}
         </button>
       </form>
     </div>

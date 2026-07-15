@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
 import "../Cms.css";
 
 const PinjamanForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+
   const [formData, setFormData] = useState({
     nama: "",
     slug: "",
@@ -17,9 +18,7 @@ const PinjamanForm = () => {
   });
 
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
-
     return {
       Authorization: token,
       "Content-Type": "application/json",
@@ -33,60 +32,75 @@ const PinjamanForm = () => {
         headers: { Authorization: localStorage.getItem("auth_token") },
       })
         .then((res) => {
-                  if (!res.ok) throw new Error("Gagal mengambil data");
-                  return res.json();
-                })
-                .then((data) => setFormData(data))
-                .catch(() => toast.error("Gagal memuat data pinjaman."));
+          if (!res.ok) throw new Error("Gagal mengambil data dari server.");
+          return res.json();
+        })
+        .then((data) => setFormData(data))
+        .catch((err) => toast.error(err.message));
     }
   }, [id, isEditMode]);
 
-  // Handler untuk input biasa
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Handler untuk input list dinamis (syarat/benefit)
   const handleListChange = (e, index, type) => {
     const newList = [...formData[type]];
     newList[index][e.target.name] = e.target.value;
     setFormData({ ...formData, [type]: newList });
   };
 
-  // Fungsi untuk menambah item ke list
   const addListItem = (type) =>
     setFormData({
       ...formData,
       [type]: [...formData[type], { deskripsi: "" }],
     });
 
-  // Fungsi untuk menghapus item dari list
   const removeListItem = (index, type) =>
     setFormData({
       ...formData,
       [type]: formData[type].filter((_, i) => i !== index),
     });
 
-  // Handler untuk submit form
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // --- VALIDASI FRONTEND ---
+    // Cek apakah list syarat kosong atau ada item yang tidak diisi
+    if (formData.syarat.length === 0 || formData.syarat.some(item => item.deskripsi.trim() === "")) {
+      toast.error("Mohon isi minimal satu syarat dengan benar.");
+      return;
+    }
+
+    // Cek apakah list benefit kosong atau ada item yang tidak diisi
+    if (formData.benefit.length === 0 || formData.benefit.some(item => item.deskripsi.trim() === "")) {
+      toast.error("Mohon isi minimal satu benefit dengan benar.");
+      return;
+    }
+
     const url = isEditMode
       ? `http://localhost:8080/api/pinjaman/${id}`
       : "http://localhost:8080/api/pinjaman";
     const method = isEditMode ? "PUT" : "POST";
 
-    fetch(url, {
-      method,
-      headers: createAuthHeader(),
-      body: JSON.stringify(formData),
-    }).then((res) => {
-      if (res.ok) {
-        alert("Produk berhasil disimpan!");
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: createAuthHeader(),
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success(`Produk pinjaman berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
         navigate("/pinjaman");
       } else {
-        alert("Gagal menyimpan produk.");
+        // Menangkap pesan error dari backend (misal: "Slug sudah digunakan")
+        const errorText = await response.text();
+        toast.error(errorText || "Gagal menyimpan data produk.");
       }
-    });
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error("Gagal terhubung ke server. Pastikan Backend aktif.");
+    }
   };
 
   return (
@@ -99,15 +113,17 @@ const PinjamanForm = () => {
           name="nama"
           value={formData.nama}
           onChange={handleChange}
+          placeholder="Contoh: Pinjaman Modal Usaha"
           required
         />
 
-        <label>Slug</label>
+        <label>Slug (URL Unik)</label>
         <input
           type="text"
           name="slug"
           value={formData.slug}
           onChange={handleChange}
+          placeholder="Contoh: pinjaman-modal-usaha"
           required
         />
 
@@ -117,6 +133,7 @@ const PinjamanForm = () => {
           name="urlGambar"
           value={formData.urlGambar}
           onChange={handleChange}
+          placeholder="URL Gambar"
           required
         />
 
@@ -126,11 +143,13 @@ const PinjamanForm = () => {
           value={formData.deskripsi}
           onChange={handleChange}
           rows="4"
+          placeholder="Jelaskan detail produk di sini..."
           required
         />
 
+        {/* --- BAGIAN SYARAT --- */}
         <fieldset>
-          <legend>Syarat</legend>
+          <legend>Syarat-Syarat</legend>
           {formData.syarat.map((item, index) => (
             <div key={index} className="dynamic-input">
               <input
@@ -138,22 +157,25 @@ const PinjamanForm = () => {
                 value={item.deskripsi}
                 onChange={(e) => handleListChange(e, index, "syarat")}
                 placeholder={`Syarat #${index + 1}`}
+                required
               />
               <button
                 type="button"
+                className="btn-remove"
                 onClick={() => removeListItem(index, "syarat")}
               >
                 Hapus
               </button>
             </div>
           ))}
-          <button type="button" onClick={() => addListItem("syarat")}>
-            Tambah Syarat
+          <button type="button" className="cms-button" onClick={() => addListItem("syarat")}>
+            + Tambah Item Syarat
           </button>
         </fieldset>
 
+        {/* --- BAGIAN BENEFIT --- */}
         <fieldset>
-          <legend>Benefit</legend>
+          <legend>Keuntungan (Benefit)</legend>
           {formData.benefit.map((item, index) => (
             <div key={index} className="dynamic-input">
               <input
@@ -161,17 +183,19 @@ const PinjamanForm = () => {
                 value={item.deskripsi}
                 onChange={(e) => handleListChange(e, index, "benefit")}
                 placeholder={`Benefit #${index + 1}`}
+                required
               />
               <button
                 type="button"
+                className="btn-remove"
                 onClick={() => removeListItem(index, "benefit")}
               >
                 Hapus
               </button>
             </div>
           ))}
-          <button type="button" onClick={() => addListItem("benefit")}>
-            Tambah Benefit
+          <button type="button" className="cms-button" onClick={() => addListItem("benefit")}>
+            + Tambah Item Benefit
           </button>
         </fieldset>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast
 import "../Cms.css";
 
 const PinjamanList = () => {
@@ -28,30 +29,32 @@ const PinjamanList = () => {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        toast.error(error.message); // Ganti console.error dengan toast
         setLoading(false);
       });
   }, []);
 
   const handleDelete = (id) => {
-    if (
-      window.confirm("Apakah Anda yakin ingin menghapus produk pinjaman ini?")
-    ) {
+    // Tetap gunakan confirm untuk keamanan sebelum menghapus
+    if (window.confirm("Apakah Anda yakin ingin menghapus produk pinjaman ini?")) {
       fetch(`http://localhost:8080/api/pinjaman/${id}`, {
         method: "DELETE",
         headers: createAuthHeader(),
       }).then((response) => {
         if (response.ok) {
           setPinjaman(pinjaman.filter((item) => item.id !== id));
-          alert("Produk berhasil dihapus!");
+          toast.success("Produk berhasil dihapus!"); // Ganti alert dengan toast.success
         } else {
-          alert("Gagal menghapus produk.");
+          toast.error("Gagal menghapus produk."); // Ganti alert dengan toast.error
         }
+      })
+      .catch(() => {
+        toast.error("Terjadi kesalahan koneksi saat menghapus.");
       });
     }
   };
 
-  if (loading) return <p>Memuat data pinjaman...</p>;
+  if (loading) return <p className="loading-text">Memuat data pinjaman...</p>;
 
   return (
     <div className="cms-page">
@@ -71,27 +74,37 @@ const PinjamanList = () => {
           </tr>
         </thead>
         <tbody>
-          {pinjaman.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.nama}</td>
-              <td>{item.slug}</td>
-              <td>
-                <Link
-                  to={`/pinjaman/edit/${item.id}`}
-                  className="cms-button edit"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="cms-button delete"
-                >
-                  Hapus
-                </button>
+          {pinjaman.length > 0 ? (
+            pinjaman.map((item) => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.nama}</td>
+                <td>{item.slug}</td>
+                <td>
+                  <div className="action-buttons">
+                    <Link
+                      to={`/pinjaman/edit/${item.id}`}
+                      className="cms-button edit"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="cms-button delete"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" style={{ textAlign: "center" }}>
+                Tidak ada data pinjaman.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
