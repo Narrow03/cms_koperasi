@@ -22,7 +22,7 @@ public class BeritaService {
 
     @Transactional(readOnly = true)
     public List<Berita> getAllBerita() {
-        return beritaRepository.findAll();
+        return beritaRepository.findAllByOrderByTanggalBeritaDesc();
     }
 
     @Transactional(readOnly = true)

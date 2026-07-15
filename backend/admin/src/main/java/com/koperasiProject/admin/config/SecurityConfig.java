@@ -51,43 +51,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomUserDetailsService userDetailsService) throws Exception {
         http
-            // Mengaktifkan CORS (Agar React bisa akses)
             .cors(withDefaults()) 
-            
-            // Mematikan CSRF (Standar untuk API Stateless)
             .csrf(csrf -> csrf.disable()) 
-            
-            // Aturan URL
             .authorizeHttpRequests(auth -> auth
-                // A. Aset Statis (Gambar, File) -> Boleh diakses siapa saja
+                
+                // PERBAIKAN 1: Izinkan SEMUA request OPTIONS (Penting untuk CORS React)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // A. Aset Statis
                 .requestMatchers("/images/**", "/api/files/**").permitAll()
                 
-                // B. Form Lamaran Kerja (POST) -> Pelamar boleh kirim tanpa login
-                .requestMatchers(HttpMethod.POST, "/api/lamaran").permitAll()
+                // B. Form Lamaran Kerja
+                .requestMatchers(HttpMethod.POST, "/api/lamaran", "/api/lamaran/**").permitAll() 
                 
-                // C. Data Publik Website Utama (Hanya GET/Baca) -> Boleh diakses siapa saja
+                // C. Data Publik Website Utama (Hanya GET/Baca)
+                // PERBAIKAN 2: Masukkan versi tanpa /** dan dengan /**
                 .requestMatchers(HttpMethod.GET,
-                    "/api/slides/active", 
-                    "/api/berita/**", 
-                    "/api/simpanan/**", 
-                    "/api/pinjaman/**", 
-                    "/api/kontak-info/**", 
-                    "/api/faq/**",
-                    "/api/karir/**",
-                    "/api/pengurus/**",
-                    "/api/statistik/**",
-                    "/api/testimonials/**",
-                    "/api/galeri/**"
+                    "/api/statistik", "/api/statistik/**",
+                    "/api/kontak-info", "/api/kontak-info/**",
+                    "/api/pengurus", "/api/pengurus/**",
+                    "/api/testimonials", "/api/testimonials/**",
+                    "/api/simpanan", "/api/simpanan/**",
+                    "/api/pinjaman", "/api/pinjaman/**",
+                    "/api/berita", "/api/berita/**",
+                    "/api/galeri", "/api/galeri/**",
+                    "/api/karir", "/api/karir/**",
+                    "/api/faq", "/api/faq/**",
+                    "/api/slides", "/api/slides/**"
                 ).permitAll()
 
-                // D. Sisanya (Hapus, Edit, Tambah Data, Login) -> WAJIB LOGIN
+                // D. Endpoint Login khusus (Agar tidak terblokir saat admin mau masuk)
+                .requestMatchers("/api/auth/**", "/api/login").permitAll()
+
+                // E. Sisanya -> WAJIB LOGIN
                 .anyRequest().authenticated() 
             )
-            
-            // Set Provider Authentication yang kita buat di atas
             .authenticationProvider(authenticationProvider(userDetailsService))
-            
-            // Menggunakan HTTP Basic Auth (Login via Header)
             .httpBasic(withDefaults());
 
         return http.build();
@@ -106,7 +105,8 @@ public class SecurityConfig {
             "http://localhost:5173", // Frontend Public
             "http://localhost:5174", // Frontend CMS Admin
             "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174"
+            "http://127.0.0.1:5174",
+            "http://192.168.1.6:5173"
             // Tambahkan IP network lain jika perlu, misal: "http://192.168.1.10:5173"
         ));
         

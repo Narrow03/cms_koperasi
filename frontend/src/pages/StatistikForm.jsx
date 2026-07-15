@@ -10,7 +10,6 @@ const StatistikForm = () => {
   const [loading, setLoading] = useState(true);
 
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
 
     return {
@@ -19,7 +18,6 @@ const StatistikForm = () => {
     };
   };
 
-  // Ambil data statistik saat komponen dimuat
   useEffect(() => {
     fetch("http://localhost:8080/api/statistik", {
       headers: { Authorization: "Basic " + btoa("admin:password123") },

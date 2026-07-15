@@ -16,11 +16,13 @@ public class SimpananController {
     @Autowired
     private SimpananService simpananService;
 
-    // CREATE
+    // CREATE dengan Validasi Slug
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Simpanan createSimpanan(@RequestBody Simpanan simpanan) {
-        return simpananService.createSimpanan(simpanan);
+    public ResponseEntity<?> createSimpanan(@RequestBody Simpanan simpanan) {
+        if (simpananService.existsBySlug(simpanan.getSlug())) {
+            return ResponseEntity.badRequest().body("Gagal: Slug '" + simpanan.getSlug() + "' sudah digunakan!");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(simpananService.createSimpanan(simpanan));
     }
 
     // READ (Get All)
@@ -37,10 +39,14 @@ public class SimpananController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // UPDATE
+    // UPDATE dengan Validasi Slug
     @PutMapping("/{id}")
-    public Simpanan updateSimpanan(@PathVariable Long id, @RequestBody Simpanan simpananDetails) {
-        return simpananService.updateSimpanan(id, simpananDetails);
+    public ResponseEntity<?> updateSimpanan(@PathVariable Long id, @RequestBody Simpanan simpananDetails) {
+        // Validasi: Apakah slug baru sudah dipakai oleh produk LAIN (selain produk ini sendiri)
+        if (simpananService.isSlugTakenByOthers(simpananDetails.getSlug(), id)) {
+            return ResponseEntity.badRequest().body("Gagal: Slug sudah digunakan oleh produk lain!");
+        }
+        return ResponseEntity.ok(simpananService.updateSimpanan(id, simpananDetails));
     }
 
     // DELETE
@@ -51,10 +57,10 @@ public class SimpananController {
     }
 
     // READ (Get by Slug) -> GET http://localhost:8080/api/simpanan/slug/sibuhar
-@GetMapping("/slug/{slug}")
-public ResponseEntity<Simpanan> getSimpananBySlug(@PathVariable String slug) {
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<Simpanan> getSimpananBySlug(@PathVariable String slug) {
     return simpananService.getSimpananBySlug(slug)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
-}
+    }
 }

@@ -57,7 +57,7 @@ public class KarirController {
     @PutMapping("/{id}")
     public Karir updateKarir(@PathVariable Long id, @RequestBody Karir karirDetails) {
         // Service akan menangani logika untuk mencari dan memperbarui data
-        return karirService.saveKarir(karirDetails); 
+        return karirService.updateKarir(id, karirDetails);
     }
 
     /**

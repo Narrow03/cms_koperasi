@@ -5,11 +5,11 @@ import com.koperasiProject.admin.repository.SimpananRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Import ini
-
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class SimpananService {
 
     @Autowired
@@ -30,13 +30,13 @@ public class SimpananService {
     }
 
     // READ (Get by ID)
-    @Transactional(readOnly = true) // TAMBAHKAN INI
+    @Transactional(readOnly = true) 
     public Optional<Simpanan> getSimpananById(Long id) {
         return simpananRepository.findById(id);
     }
 
-    // READ (Get by Slug) - Paling Penting untuk halaman detail Anda
-    @Transactional(readOnly = true) // TAMBAHKAN INI
+    // READ (Get by Slug)
+    @Transactional(readOnly = true) 
     public Optional<Simpanan> getSimpananBySlug(String slug) {
         return simpananRepository.findBySlug(slug);
     }
@@ -46,8 +46,7 @@ public class SimpananService {
     public Simpanan updateSimpanan(Long id, Simpanan simpananDetails) {
         Simpanan existingSimpanan = simpananRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Simpanan tidak ditemukan dengan id: " + id));
-
-        // ... (sisa kode update tetap sama)
+                
         existingSimpanan.setNama(simpananDetails.getNama());
         existingSimpanan.setSlug(simpananDetails.getSlug());
         existingSimpanan.setUrlGambar(simpananDetails.getUrlGambar());
@@ -66,6 +65,18 @@ public class SimpananService {
         });
 
         return simpananRepository.save(existingSimpanan);
+    }
+
+    // Cek untuk Create
+    public boolean existsBySlug(String slug) {
+        return simpananRepository.existsBySlug(slug);
+    }
+
+    // Cek untuk Update (Penting!)
+    public boolean isSlugTakenByOthers(String slug, Long id) {
+        return simpananRepository.findBySlug(slug)
+                .map(s -> !s.getId().equals(id)) // Jika ada slug sama tapi ID berbeda, berarti "diambil orang lain"
+                .orElse(false); // Jika tidak ada slug sama, berarti aman
     }
 
     // DELETE

@@ -7,7 +7,7 @@ const BeritaForm = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
 
-  // 1. Tambahkan state untuk loading indikator
+  // State untuk loading indikator
   const [isLoading, setIsLoading] = useState(false);       // Loading saat ambil data awal
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading saat tombol simpan ditekan
 
@@ -30,7 +30,7 @@ const BeritaForm = () => {
 
   useEffect(() => {
     if (isEditMode) {
-      setIsLoading(true); // Mulai loading
+      setIsLoading(true); 
       fetch(`http://localhost:8080/api/berita/${id}`, {
         headers: { Authorization: localStorage.getItem("auth_token") },
       })
@@ -40,7 +40,7 @@ const BeritaForm = () => {
         })
         .then((data) => setFormData(data))
         .catch((err) => alert("Terjadi kesalahan: " + err.message))
-        .finally(() => setIsLoading(false)); // Selesai loading
+        .finally(() => setIsLoading(false)); 
     }
   }, [id, isEditMode]);
 

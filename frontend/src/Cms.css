@@ -231,42 +231,145 @@ fieldset button {
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-/* Login Page Styling */
+/* Container Utama Login (Layar Penuh) */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #2c3e50; /* Warna background gelap */
+  background-color: #2c3e50; /* Latar belakang gelap */
+  margin: 0;
+  padding: 0;
 }
 
+/* Container Utama Login */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #2c3e50;
+  margin: 0;
+  padding: 0;
+}
+
+/* Kartu Form Login - Dibuat lebih lebar dan ringkas */
 .login-card {
   background: white;
-  padding: 2.5rem;
+  padding: 2rem 3.5rem;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
+  box-sizing: border-box;
+}
+
+.login-title {
   text-align: center;
-}
-
-.login-card h2 {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem; 
   color: #2c3e50;
+  margin-top: 0;
+  font-weight: bold;
+  font-size: 1.8rem;
 }
-
 .error-message {
   color: #e74c3c;
-  background-color: #fadbd8;
-  padding: 0.5rem;
-  border-radius: 4px;
+  text-align: center;
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
 
+/* Form Group - Mengurangi margin antar input */
+.form-group {
+  margin-bottom: 0.8rem; 
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.7rem; 
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+/* Tombol Masuk */
 .login-btn {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 1.2rem;
   padding: 0.8rem;
   font-size: 1rem;
+  font-weight: bold;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Menyejajarkan tombol Edit dan Hapus */
+.action-buttons {
+  display: flex;
+  gap: 8px; /* Memberi jarak antar tombol */
+  justify-content: flex-start; /* Menempel ke kiri sel */
+  align-items: center;
+}
+
+/* Memastikan sel tabel aksi tidak tertekuk (wrapping) */
+.cms-table td:last-child {
+  white-space: nowrap;
+  width: 1%; /* Memaksa kolom aksi hanya selebar tombolnya saja */
+}
+
+/* Gaya tombol edit (kuning) sesuai gambar */
+.cms-button.edit {
+  background-color: #f1c40f;
+  color: #000;
+}
+
+/* Gaya tombol hapus (merah) sesuai gambar */
+.cms-button.delete {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+/* Gaya untuk tombol tambah (Hijau agar estetik) */
+.btn-add {
+  background-color: #27ae60; /* Warna hijau sukses */
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  transition: background 0.3s;
+}
+
+.btn-add:hover {
+  background-color: #219150;
+}
+
+/* Gaya untuk tombol hapus di dalam list */
+.btn-remove {
+  background-color: #e74c3c; /* Warna merah */
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: opacity 0.2s;
+}
+
+.btn-remove:hover {
+  opacity: 0.8;
 }

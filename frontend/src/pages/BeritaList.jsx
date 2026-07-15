@@ -5,9 +5,7 @@ import '../Cms.css';
 const BeritaList = () => {
   const [berita, setBerita] = useState([]);
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
-    const token = localStorage.getItem('auth_token'); 
-    
+    const token = localStorage.getItem('auth_token');  
     return {
         'Authorization': token,
         'Content-Type': 'application/json'
@@ -33,14 +31,25 @@ const BeritaList = () => {
         <Link to="/berita/baru" className="cms-button">Tambah Berita</Link>
       </div>
       <table className="cms-table">
-        <thead><tr><th>ID</th><th>Judul</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Judul</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
         <tbody>
           {berita.map(item => (
             <tr key={item.id}>
-              <td>{item.id}</td><td>{item.judul}</td><td>{item.tanggalBerita}</td>
+              <td>{item.id}</td>
+              <td>{item.judul}</td>
+              <td>{item.tanggalBerita}</td>
               <td>
-                <Link to={`/berita/edit/${item.id}`} className="cms-button edit">Edit</Link>
-                <button onClick={() => handleDelete(item.id)} className="cms-button delete">Hapus</button>
+                <div className="action-buttons">
+                  <Link to={`/berita/edit/${item.id}`} className="cms-button edit">Edit</Link>
+                  <button onClick={() => handleDelete(item.id)} className="cms-button delete">Hapus</button>
+                </div>
               </td>
             </tr>
           ))}

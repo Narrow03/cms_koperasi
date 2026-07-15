@@ -8,5 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface SimpananRepository extends JpaRepository<Simpanan, Long> {
-    Optional<Simpanan> findBySlug(String slug); // Tambahkan baris ini
+    Optional<Simpanan> findBySlug(String slug); 
+    boolean existsBySlug(String slug);
 }

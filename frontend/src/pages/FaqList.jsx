@@ -5,7 +5,7 @@ import '../Cms.css';
 const FaqList = () => {
   const [faqs, setFaqs] = useState([]);
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
+    
     const token = localStorage.getItem('auth_token'); 
     
     return {

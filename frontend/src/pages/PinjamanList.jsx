@@ -7,7 +7,6 @@ const PinjamanList = () => {
   const [loading, setLoading] = useState(true);
 
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
 
     return {
@@ -16,7 +15,6 @@ const PinjamanList = () => {
     };
   };
 
-  // Mengambil data saat komponen pertama kali dimuat
   useEffect(() => {
     fetch("http://localhost:8080/api/pinjaman", { headers: createAuthHeader() })
       .then((response) => {
@@ -35,7 +33,6 @@ const PinjamanList = () => {
       });
   }, []);
 
-  // Fungsi untuk menangani penghapusan
   const handleDelete = (id) => {
     if (
       window.confirm("Apakah Anda yakin ingin menghapus produk pinjaman ini?")

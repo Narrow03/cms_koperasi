@@ -15,27 +15,41 @@ const LoginPage = () => {
     setError('');
     const success = await login(username, password);
     if (success) {
-      navigate('/'); // Redirect ke dashboard jika sukses
+      navigate('/simpanan'); 
     } else {
       setError('Username atau password salah!');
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#2c3e50' }}>
-      <div className="cms-form" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Login Admin</h2>
-        {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
+    <div className="login-container">
+      <div className="login-card">
+        <h2 className="login-title">Login Admin</h2>
+        
+        {error && <p className="error-message">{error}</p>}
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <input 
+              type="text" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              required 
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
           </div>
-          <button type="submit" className="cms-button" style={{ width: '100%' }}>Masuk</button>
+          <button type="submit" className="cms-button login-btn">
+            Masuk
+          </button>
         </form>
       </div>
     </div>

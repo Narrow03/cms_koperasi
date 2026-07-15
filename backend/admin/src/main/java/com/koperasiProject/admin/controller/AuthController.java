@@ -20,7 +20,6 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Login berhasil");
         response.put("status", "success");
-        // Anda bisa menambahkan role atau info user lain di sini
         return ResponseEntity.ok(response);
     }
 }

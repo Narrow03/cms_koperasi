@@ -1,39 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "../Cms.css";
-
-// Helper function untuk mengelola list dinamis
-const useDynamicList = (initialValue = []) => {
-  const [list, setList] = useState(initialValue);
-  const handleChange = (e, index) => {
-    const newList = [...list];
-    newList[index][e.target.name] = e.target.value;
-    setList(newList);
-  };
-  const addItem = () => setList([...list, { deskripsi: "" }]);
-  const removeItem = (index) => setList(list.filter((_, i) => i !== index));
-  return [list, setList, handleChange, addItem, removeItem];
-};
 
 const KarirForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+
   const [formData, setFormData] = useState({
     posisi: "",
     divisi: "",
     deskripsiSingkat: "",
+    jobDescriptions: [],
+    requirements: [],
+    benefits: [],
   });
 
-  const [jobDescriptions, setJobDescriptions, handleJdChange, addJd, removeJd] =
-    useDynamicList([]);
-  const [requirements, setRequirements, handleReqChange, addReq, removeReq] =
-    useDynamicList([]);
-  const [benefits, setBenefits, handleBenChange, addBen, removeBen] =
-    useDynamicList([]);
-
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
 
     return {
@@ -42,40 +26,58 @@ const KarirForm = () => {
     };
   };
 
+  // Mengambil data jika dalam mode edit
   useEffect(() => {
     if (isEditMode) {
       fetch(`http://localhost:8080/api/karir/${id}`, {
-        headers: { Authorization: "Basic " + btoa("admin:password123") },
+        headers: { Authorization: localStorage.getItem("auth_token") },
       })
-        .then((res) => res.json())
-        .then((data) => {
-          setFormData({
-            posisi: data.posisi,
-            divisi: data.divisi,
-            deskripsiSingkat: data.deskripsiSingkat,
-          });
-          setJobDescriptions(data.jobDescriptions);
-          setRequirements(data.requirements);
-          setBenefits(data.benefits);
-        });
+        .then((res) => {
+          if (!res.ok) throw new Error("Gagal mengambil data");
+          return res.json();
+        })
+        .then((data) => setFormData(data))
+        .catch(() => toast.error("Gagal memuat data lowongan."));
     }
   }, [id, isEditMode]);
 
+  // Handler untuk input biasa
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  // Handler untuk input dalam array/list
+  const handleListChange = (e, index, type) => {
+    const newList = [...formData[type]];
+    newList[index][e.target.name] = e.target.value;
+    setFormData({ ...formData, [type]: newList });
+  };
+
+  // Menambah item baru ke dalam list tertentu
+  const addListItem = (type) =>
+    setFormData({
+      ...formData,
+      [type]: [...formData[type], { deskripsi: "" }],
+    });
+
+  // Menghapus item dari list tertentu berdasarkan index
+  const removeListItem = (index, type) =>
+    setFormData({
+      ...formData,
+      [type]: formData[type].filter((_, i) => i !== index),
+    });
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const url = isEditMode
       ? `http://localhost:8080/api/karir/${id}`
       : "http://localhost:8080/api/karir";
     const method = isEditMode ? "PUT" : "POST";
-    const payload = { ...formData, jobDescriptions, requirements, benefits };
 
     fetch(url, {
       method,
       headers: createAuthHeader(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(formData),
     }).then((res) => {
       if (res.ok) {
         alert("Lowongan berhasil disimpan!");
@@ -88,7 +90,7 @@ const KarirForm = () => {
 
   return (
     <div className="cms-page">
-      <h2>{isEditMode ? "Edit" : "Tambah"} Lowongan</h2>
+      <h2>{isEditMode ? "Edit" : "Tambah"} Lowongan Karir</h2>
       <form onSubmit={handleSubmit} className="cms-form">
         <label>Posisi</label>
         <input
@@ -98,6 +100,7 @@ const KarirForm = () => {
           onChange={handleChange}
           required
         />
+
         <label>Divisi</label>
         <input
           type="text"
@@ -106,67 +109,97 @@ const KarirForm = () => {
           onChange={handleChange}
           required
         />
+
         <label>Deskripsi Singkat (untuk halaman daftar)</label>
         <textarea
           name="deskripsiSingkat"
           value={formData.deskripsiSingkat}
           onChange={handleChange}
           rows="3"
+          required
         />
 
-        {/* Helper component untuk list dinamis */}
-        <DynamicList
-          title="Deskripsi Pekerjaan"
-          list={jobDescriptions}
-          handleChange={handleJdChange}
-          addItem={addJd}
-          removeItem={removeJd}
-        />
-        <DynamicList
-          title="Requirements"
-          list={requirements}
-          handleChange={handleReqChange}
-          addItem={addReq}
-          removeItem={removeReq}
-        />
-        <DynamicList
-          title="Benefit"
-          list={benefits}
-          handleChange={handleBenChange}
-          addItem={addBen}
-          removeItem={removeBen}
-        />
+        {/* --- FIELDSET DESKRIPSI PEKERJAAN --- */}
+        <fieldset>
+          <legend>Deskripsi Pekerjaan</legend>
+          {formData.jobDescriptions.map((item, index) => (
+            <div key={index} className="dynamic-input">
+              <textarea
+                name="deskripsi"
+                value={item.deskripsi}
+                onChange={(e) => handleListChange(e, index, "jobDescriptions")}
+                rows="2"
+                placeholder={`Poin Job Desk #${index + 1}`}
+              />
+              <button
+                type="button"
+                onClick={() => removeListItem(index, "jobDescriptions")}
+              >
+                Hapus
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => addListItem("jobDescriptions")}>
+            Tambah Deskripsi Pekerjaan
+          </button>
+        </fieldset>
+
+        {/* --- FIELDSET REQUIREMENTS --- */}
+        <fieldset>
+          <legend>Requirements</legend>
+          {formData.requirements.map((item, index) => (
+            <div key={index} className="dynamic-input">
+              <textarea
+                name="deskripsi"
+                value={item.deskripsi}
+                onChange={(e) => handleListChange(e, index, "requirements")}
+                rows="2"
+                placeholder={`Syarat #${index + 1}`}
+              />
+              <button
+                type="button"
+                onClick={() => removeListItem(index, "requirements")}
+              >
+                Hapus
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => addListItem("requirements")}>
+            Tambah Syarat
+          </button>
+        </fieldset>
+
+        {/* --- FIELDSET BENEFITS --- */}
+        <fieldset>
+          <legend>Benefit</legend>
+          {formData.benefits.map((item, index) => (
+            <div key={index} className="dynamic-input">
+              <textarea
+                name="deskripsi"
+                value={item.deskripsi}
+                onChange={(e) => handleListChange(e, index, "benefits")}
+                rows="2"
+                placeholder={`Benefit #${index + 1}`}
+              />
+              <button
+                type="button"
+                onClick={() => removeListItem(index, "benefits")}
+              >
+                Hapus
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => addListItem("benefits")}>
+            Tambah Benefit
+          </button>
+        </fieldset>
 
         <button type="submit" className="cms-button">
-          {isEditMode ? "Update" : "Simpan"}
+          {isEditMode ? "Perbarui Data" : "Simpan Data"}
         </button>
       </form>
     </div>
   );
 };
-
-// Helper component untuk merender fieldset list dinamis
-const DynamicList = ({ title, list, handleChange, addItem, removeItem }) => (
-  <fieldset>
-    <legend>{title}</legend>
-    {list.map((item, index) => (
-      <div key={index} className="dynamic-input">
-        <textarea
-          name="deskripsi"
-          value={item.deskripsi}
-          onChange={(e) => handleChange(e, index)}
-          rows="2"
-          placeholder={`Poin #${index + 1}`}
-        />
-        <button type="button" onClick={() => removeItem(index)}>
-          Hapus
-        </button>
-      </div>
-    ))}
-    <button type="button" onClick={addItem}>
-      Tambah Poin
-    </button>
-  </fieldset>
-);
 
 export default KarirForm;

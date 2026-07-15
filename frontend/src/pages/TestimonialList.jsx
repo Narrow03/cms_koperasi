@@ -5,7 +5,6 @@ import "../Cms.css";
 const TestimonialList = () => {
   const [testimonials, setTestimonials] = useState([]);
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
 
     return {

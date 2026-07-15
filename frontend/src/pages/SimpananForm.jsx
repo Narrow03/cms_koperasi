@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
 import "../Cms.css";
 
 const SimpananForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+
   const [formData, setFormData] = useState({
     nama: "",
     slug: "",
@@ -24,18 +25,18 @@ const SimpananForm = () => {
     };
   };
 
+  // Mengambil data jika dalam mode edit
   useEffect(() => {
     if (isEditMode) {
-
       fetch(`http://localhost:8080/api/simpanan/${id}`, {
         headers: { Authorization: localStorage.getItem("auth_token") },
       })
         .then((res) => {
-          if (!res.ok) throw new Error("Gagal mengambil data");
+          if (!res.ok) throw new Error("Gagal mengambil data dari server.");
           return res.json();
         })
         .then((data) => setFormData(data))
-        .catch(() => toast.error("Gagal memuat data simpanan."));
+        .catch((err) => toast.error(err.message));
     }
   }, [id, isEditMode]);
 
@@ -60,160 +61,146 @@ const SimpananForm = () => {
       [type]: formData[type].filter((_, i) => i !== index),
     });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Tampilkan loading toast
-    const toastId = toast.loading("Sedang menyimpan data...");
+    // --- VALIDASI FRONTEND ---
+    // Cek apakah list syarat kosong atau ada item yang tidak diisi
+    if (formData.syarat.length === 0 || formData.syarat.some(item => item.deskripsi.trim() === "")) {
+      toast.error("Mohon isi minimal satu syarat dengan benar.");
+      return;
+    }
+
+    // Cek apakah list benefit kosong atau ada item yang tidak diisi
+    if (formData.benefit.length === 0 || formData.benefit.some(item => item.deskripsi.trim() === "")) {
+      toast.error("Mohon isi minimal satu benefit dengan benar.");
+      return;
+    }
 
     const url = isEditMode
       ? `http://localhost:8080/api/simpanan/${id}`
       : "http://localhost:8080/api/simpanan";
     const method = isEditMode ? "PUT" : "POST";
 
-    fetch(url, {
-      method,
-      headers: createAuthHeader(),
-      body: JSON.stringify(formData),
-    })
-      .then((response) => {
-        if (response.ok) {
-          // Update toast menjadi sukses
-          toast.update(toastId, {
-            render: `Produk berhasil ${
-              isEditMode ? "diperbarui" : "disimpan"
-            }!`,
-            type: "success",
-            isLoading: false,
-            autoClose: 3000,
-          });
-
-          // Beri sedikit jeda sebelum navigasi agar user bisa baca toast
-          setTimeout(() => navigate("/simpanan"), 1500);
-        } else {
-          throw new Error("Gagal menyimpan");
-        }
-      })
-      .catch((err) => {
-        // Update toast menjadi error
-        toast.update(toastId, {
-          render: "Terjadi kesalahan saat menyimpan data.",
-          type: "error",
-          isLoading: false,
-          autoClose: 3000,
-        });
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: createAuthHeader(),
+        body: JSON.stringify(formData),
       });
+
+      if (response.ok) {
+        toast.success(`Produk simpanan berhasil ${isEditMode ? "diperbarui" : "ditambahkan"}!`);
+        navigate("/simpanan");
+      } else {
+        // Menangkap pesan error dari backend (misal: "Slug sudah digunakan")
+        const errorText = await response.text();
+        toast.error(errorText || "Gagal menyimpan data produk.");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error("Gagal terhubung ke server. Pastikan Backend aktif.");
+    }
   };
 
   return (
     <div className="cms-page">
       <h2>{isEditMode ? "Edit" : "Tambah"} Produk Simpanan</h2>
       <form onSubmit={handleSubmit} className="cms-form">
-        {/* ... (Bagian input form sama persis seperti sebelumnya) ... */}
-        {/* Saya singkat bagian ini agar fokus ke perubahan toast */}
+        <label>Nama Produk</label>
+        <input
+          type="text"
+          name="nama"
+          value={formData.nama}
+          onChange={handleChange}
+          placeholder="Contoh: Simpanan Sukarela"
+          required
+        />
 
-        <div className="form-group">
-          <label>Nama Produk</label>
-          <input
-            type="text"
-            name="nama"
-            value={formData.nama}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        <label>Slug (URL Unik)</label>
+        <input
+          type="text"
+          name="slug"
+          value={formData.slug}
+          onChange={handleChange}
+          placeholder="Contoh: simpanan-sukarela"
+          required
+        />
 
-        <div className="form-group">
-          <label>Slug</label>
-          <input
-            type="text"
-            name="slug"
-            value={formData.slug}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        <label>URL Gambar</label>
+        <input
+          type="text"
+          name="urlGambar"
+          value={formData.urlGambar}
+          onChange={handleChange}
+          placeholder="URL Gambar"
+          required
+        />
 
-        <div className="form-group">
-          <label>URL Gambar</label>
-          <input
-            type="text"
-            name="urlGambar"
-            value={formData.urlGambar}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        <label>Deskripsi</label>
+        <textarea
+          name="deskripsi"
+          value={formData.deskripsi}
+          onChange={handleChange}
+          rows="4"
+          placeholder="Jelaskan detail produk di sini..."
+          required
+        />
 
-        <div className="form-group">
-          <label>Deskripsi</label>
-          <textarea
-            name="deskripsi"
-            value={formData.deskripsi}
-            onChange={handleChange}
-            rows="4"
-            required
-          />
-        </div>
-
+        {/* --- BAGIAN SYARAT --- */}
         <fieldset>
-          <legend>Syarat</legend>
+          <legend>Syarat-Syarat</legend>
           {formData.syarat.map((item, index) => (
             <div key={index} className="dynamic-input">
               <input
                 name="deskripsi"
                 value={item.deskripsi}
                 onChange={(e) => handleListChange(e, index, "syarat")}
-                placeholder="Isi syarat..."
+                placeholder={`Syarat #${index + 1}`}
+                required
               />
               <button
                 type="button"
-                className="cms-button delete-small"
+                className="btn-remove"
                 onClick={() => removeListItem(index, "syarat")}
               >
                 Hapus
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            className="cms-button add-small"
-            onClick={() => addListItem("syarat")}
-          >
-            + Tambah Syarat
+          <button type="button" className="cms-button" onClick={() => addListItem("syarat")}>
+            + Tambah Item Syarat
           </button>
         </fieldset>
 
+        {/* --- BAGIAN BENEFIT --- */}
         <fieldset>
-          <legend>Benefit</legend>
+          <legend>Keuntungan (Benefit)</legend>
           {formData.benefit.map((item, index) => (
             <div key={index} className="dynamic-input">
               <input
                 name="deskripsi"
                 value={item.deskripsi}
                 onChange={(e) => handleListChange(e, index, "benefit")}
-                placeholder="Isi benefit..."
+                placeholder={`Benefit #${index + 1}`}
+                required
               />
               <button
                 type="button"
-                className="cms-button delete-small"
+                className="btn-remove"
                 onClick={() => removeListItem(index, "benefit")}
               >
                 Hapus
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            className="cms-button add-small"
-            onClick={() => addListItem("benefit")}
-          >
-            + Tambah Benefit
+          <button type="button" className="cms-button" onClick={() => addListItem("benefit")}>
+            + Tambah Item Benefit
           </button>
         </fieldset>
 
         <button type="submit" className="cms-button">
-          {isEditMode ? "Perbarui" : "Simpan"}
+          {isEditMode ? "Perbarui Data" : "Simpan Data"}
         </button>
       </form>
     </div>

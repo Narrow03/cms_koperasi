@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast
 import "../Cms.css";
 
 const SimpananList = () => {
@@ -7,7 +8,6 @@ const SimpananList = () => {
   const [loading, setLoading] = useState(true);
 
   const createAuthHeader = () => {
-    // 1. Ambil token TEPAT saat fungsi ini dipanggil
     const token = localStorage.getItem("auth_token");
 
     return {
@@ -18,15 +18,22 @@ const SimpananList = () => {
 
   useEffect(() => {
     fetch("http://localhost:8080/api/simpanan", { headers: createAuthHeader() })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error("Gagal mengambil data simpanan.");
+        return response.json();
+      })
       .then((data) => {
         setSimpanan(data);
         setLoading(false);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => {
+        toast.error(error.message); // Ganti console.error dengan toast
+        setLoading(false);
+      });
   }, []);
 
   const handleDelete = (id) => {
+    // Tetap gunakan confirm untuk keamanan sebelum menghapus
     if (window.confirm("Yakin ingin menghapus produk ini?")) {
       fetch(`http://localhost:8080/api/simpanan/${id}`, {
         method: "DELETE",
@@ -34,15 +41,18 @@ const SimpananList = () => {
       }).then((response) => {
         if (response.ok) {
           setSimpanan(simpanan.filter((item) => item.id !== id));
-          alert("Produk berhasil dihapus!");
+          toast.success("Produk berhasil dihapus!"); // Ganti alert dengan toast.success
         } else {
-          alert("Gagal menghapus produk.");
+          toast.error("Gagal menghapus produk."); // Ganti alert dengan toast.error
         }
+      })
+      .catch(() => {
+        toast.error("Terjadi kesalahan koneksi saat menghapus.");
       });
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p className="loading-text">Memuat data simpanan...</p>;
 
   return (
     <div className="cms-page">
@@ -62,27 +72,37 @@ const SimpananList = () => {
           </tr>
         </thead>
         <tbody>
-          {simpanan.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.nama}</td>
-              <td>{item.slug}</td>
-              <td>
-                <Link
-                  to={`/simpanan/edit/${item.id}`}
-                  className="cms-button edit"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="cms-button delete"
-                >
-                  Hapus
-                </button>
+          {simpanan.length > 0 ? (
+            simpanan.map((item) => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.nama}</td>
+                <td>{item.slug}</td>
+                <td>
+                  <div className="action-buttons">
+                    <Link
+                      to={`/simpanan/edit/${item.id}`}
+                      className="cms-button edit"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="cms-button delete"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" style={{ textAlign: "center" }}>
+                Tidak ada data simpanan.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
